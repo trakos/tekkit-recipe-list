@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="dataSourceStorage">
+  <data-source source="LOCAL" name="SQLite - sqlite.db" uuid="20514aa8-483e-4233-965d-0f2ce0ed5ef8">
+    <database-info product="SQLite" version="3.7.6.3" jdbc-version="2.1" driver-name="SQLiteJDBC" driver-version="native"/>
+    <case-sensitivity plain-identifiers="mixed" quoted-identifiers="mixed"/>
+    <schema name="" catalog=""/>
+    <table name="category" schema="" catalog="" type="TABLE">
+      <column name="category_name" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <primary-key columns="category_name"/>
+    </table>
+    <table name="handler" schema="" catalog="" type="TABLE">
+      <column name="handler_id" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="handler_name" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="handler_image" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <primary-key columns="handler_id"/>
+    </table>
+    <table name="handler_machine" schema="" catalog="" type="TABLE">
+      <column name="machine_handler_id" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="machine_item_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="machine_item_damage" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <primary-key columns="machine_handler_id,machine_item_id,machine_item_damage"/>
+    </table>
+    <table name="item" schema="" catalog="" type="TABLE">
+      <column name="item_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="item_damage" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="item_icon" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_name" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_rawName" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_mod" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_type" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_category_name" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_description" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="item_showOnList" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="item_isBaseItem" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <primary-key columns="item_id,item_damage"/>
+    </table>
+    <table name="item_attribute" schema="" catalog="" type="TABLE">
+      <column name="attribute_item_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="attribute_damage_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="attribute_name" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="attribute_value" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <primary-key columns="attribute_item_id,attribute_damage_id,attribute_name"/>
+    </table>
+    <table name="item_rawcost" schema="" catalog="" type="TABLE">
+      <column name="rawcost_id" sqlType="INTEGER" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="rawcost_item_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="rawcost_damage_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <primary-key columns="rawcost_id"/>
+    </table>
+    <table name="item_rawcost_entry" schema="" catalog="" type="TABLE">
+      <column name="entry_rawcost_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="entry_item_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="entry_item_damage" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="entry_amount" sqlType="REAL" length="2000000000" precision="10" nullable="false" jdbcType="6"/>
+      <primary-key columns="entry_rawcost_id,entry_item_id,entry_item_damage"/>
+    </table>
+    <table name="recipe" schema="" catalog="" type="TABLE">
+      <column name="recipe_id" sqlType="INTEGER" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="recipe_handler_id" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="recipe_visible" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <primary-key columns="recipe_id"/>
+    </table>
+    <table name="recipe_ingredient" schema="" catalog="" type="TABLE">
+      <column name="ingredient_id" sqlType="INTEGER" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="ingredient_recipe_id" sqlType="" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="ingredient_type" sqlType="TEXT" length="2000000000" precision="10" nullable="false" jdbcType="12"/>
+      <column name="ingredient_x" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="ingredient_y" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="ingredient_amount" sqlType="REAL" length="2000000000" precision="10" nullable="false" jdbcType="6"/>
+      <primary-key columns="ingredient_id"/>
+    </table>
+    <table name="recipe_ingredient_option" schema="" catalog="" type="TABLE">
+      <column name="option_ingredient_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="option_item_id" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <column name="option_item_damage" sqlType="INT" length="2000000000" precision="10" nullable="false" jdbcType="4"/>
+      <primary-key columns="option_ingredient_id,option_item_id,option_item_damage"/>
+    </table>
+    <table name="sqlite_sequence" schema="" catalog="" type="TABLE">
+      <column name="name" sqlType="" length="2000000000" precision="10" nullable="true" jdbcType="12"/>
+      <column name="seq" sqlType="" length="2000000000" precision="10" nullable="true" jdbcType="12"/>
+    </table>
+  </data-source>
+</component>

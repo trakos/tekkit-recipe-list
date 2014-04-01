@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/TekkitRecipeList.iml" filepath="$PROJECT_DIR$/TekkitRecipeList.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../tools/android_sdk/extras/android/support/v7/appcompat/android-support-v7-appcompat.iml" filepath="$PROJECT_DIR$/../../../tools/android_sdk/extras/android/support/v7/appcompat/android-support-v7-appcompat.iml" />
+    </modules>
+  </component>
+</project>
+
