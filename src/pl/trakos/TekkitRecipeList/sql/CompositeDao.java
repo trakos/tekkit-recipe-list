@@ -47,7 +47,7 @@ public class CompositeDao<Entity> extends BaseDaoImpl<Entity, String>
         {
             throw new SQLException("CompositeKey has more than two field defined.");
         }
-        return queryForFirst(queryBuilder().where().eq(compositeKey.key1(), s1).eq(compositeKey.key2(), s2).prepare());
+        return queryForFirst(queryBuilder().where().eq(compositeKey.key1(), s1).and().eq(compositeKey.key2(), s2).prepare());
     }
 
     public Entity queryForId(int s1) throws SQLException

@@ -5,7 +5,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.view.*;
 import android.widget.AbsListView;
@@ -13,6 +12,8 @@ import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.widget.ListView;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
+import pl.trakos.TekkitRecipeList.sql.entities.Item;
+import pl.trakos.TekkitRecipeList.view.Generator;
 
 import java.sql.SQLException;
 
@@ -28,6 +29,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
 
     public NavigationLevels navigationLevel = NavigationLevels.LEVEL_MODS;
     public ListDataRow[] selectedItems = new ListDataRow[NavigationLevels.values().length];
+    public ListDataRow[] pathToCurrentItem = null;
 
     DrawerLayout drawerLayout;
     FrameLayout frameLayout;
@@ -63,6 +65,11 @@ public class TekkitRecipeListActivity extends ActionBarActivity
 
             public void onDrawerClosed(View view)
             {
+                if (pathToCurrentItem != null)
+                {
+                    selectedItems = pathToCurrentItem;
+                    showLevel(NavigationLevels.LEVEL_ITEMS, null);
+                }
                 super.onDrawerClosed(view);
                 invalidateOptionsMenu();
             }
@@ -74,14 +81,12 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             }
         };
 
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setHomeButtonEnabled(true);
-        actionBar.show();
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         drawerLayout.setLayoutParams(new DrawerLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
         frameLayout.setLayoutParams(new DrawerLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
-        listView.setLayoutParams(new DrawerLayout.LayoutParams(320, DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.START));
+        listView.setLayoutParams(new DrawerLayout.LayoutParams(320, DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.LEFT));
 
         listView.setChoiceMode(AbsListView.CHOICE_MODE_SINGLE);
         listView.setBackgroundDrawable(new ColorDrawable(0xFFEEEEEE));
@@ -123,7 +128,26 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         {
             return true;
         }
-        //
+        switch (item.getItemId())
+        {
+            case android.R.id.home:
+                goUp();
+                /*if (drawerLayout.isDrawerOpen(listView))
+                {
+                    drawerLayout.closeDrawer(listView);
+                    if (selectedItems[NavigationLevels.LEVEL_ITEMS.ordinal()] != null)
+                    {
+                        navigationLevel = NavigationLevels.LEVEL_ITEMS;
+                        title = selectedItems[NavigationLevels.LEVEL_ITEMS.ordinal()].text;
+                        setTitle(title);
+                    }
+                }
+                else
+                {
+                    drawerLayout.openDrawer(listView);
+                }*/
+                break;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -144,11 +168,13 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             ListDataRow itemPosition = adapter.getItem(position);
             if (navigationLevel == NavigationLevels.LEVEL_ITEMS)
             {
+                selectedItems[navigationLevel.ordinal()] = itemPosition;
                 listView.setItemChecked(position, true);
                 title = itemPosition.text;
                 drawerLayout.closeDrawer(listView);
+                pathToCurrentItem = selectedItems.clone();
 
-                // show item?
+                showItem(itemPosition.id1, itemPosition.id2);
             }
             else
             {
@@ -158,11 +184,29 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         }
     }
 
+    private void showItem(int itemId, int itemDamage)
+    {
+        Item item;
+        try
+        {
+            item = DaoFactory.getDaoFactory().items.queryForId(itemId, itemDamage);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        frameLayout.removeAllViews();
+        frameLayout.addView(Generator.getItemPage(this, item));
+    }
+
     void showLevel(NavigationLevels changeToLevel, ListDataRow selectedRow)
     {
         ListDataAdapter adapter = (ListDataAdapter) listView.getAdapter();
         if (changeToLevel.ordinal() > 0)
         {
+            getSupportActionBar().setDisplayUseLogoEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            drawerToggle.setDrawerIndicatorEnabled(false);
             if (selectedRow == null)
             {
                 selectedRow = selectedItems[changeToLevel.ordinal() - 1];
@@ -171,6 +215,12 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             {
                 selectedItems[changeToLevel.ordinal() - 1] = selectedRow;
             }
+        }
+        else
+        {
+            getSupportActionBar().setDisplayUseLogoEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            drawerToggle.setDrawerIndicatorEnabled(true);
         }
 
         navigationLevel = changeToLevel;
@@ -204,6 +254,42 @@ public class TekkitRecipeListActivity extends ActionBarActivity
     @Override
     public void onBackPressed()
     {
+        if (navigationLevel == NavigationLevels.LEVEL_MODS && drawerLayout.isDrawerOpen(listView))
+        {
+            drawerLayout.closeDrawer(listView);
+        }
+        else if (navigationLevel == NavigationLevels.LEVEL_MODS && !drawerLayout.isDrawerOpen(listView))
+        {
+            super.onBackPressed();
+        }
+        else
+        {
+            goUp();
+        }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)
+    {
+        switch (keyCode)
+        {
+            case KeyEvent.KEYCODE_MENU:
+                if (drawerLayout.isDrawerOpen(listView))
+                {
+                    drawerLayout.closeDrawer(listView);
+                }
+                else
+                {
+                    drawerLayout.openDrawer(listView);
+                }
+                return true;
+            default:
+                return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    public void goUp()
+    {
         if (!drawerLayout.isDrawerOpen(listView) && navigationLevel != NavigationLevels.LEVEL_MODS)
         {
             drawerLayout.openDrawer(listView);
@@ -212,11 +298,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         {
             drawerLayout.closeDrawer(listView);
         }
-        else if (navigationLevel == NavigationLevels.LEVEL_MODS)
-        {
-            super.onBackPressed();
-        }
-        else
+        else if (navigationLevel != NavigationLevels.LEVEL_MODS)
         {
             showLevel(NavigationLevels.values()[navigationLevel.ordinal() - 1], null);
         }

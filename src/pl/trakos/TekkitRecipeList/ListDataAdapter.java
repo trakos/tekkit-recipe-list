@@ -49,8 +49,8 @@ public class ListDataAdapter extends ArrayAdapter<ListDataRow>
 
         TextView listText = new TextView(getContext());
         listText.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, AbsListView.LayoutParams.WRAP_CONTENT));
-        ((LinearLayout.LayoutParams) listText.getLayoutParams()).topMargin = 5;
-        ((LinearLayout.LayoutParams) listText.getLayoutParams()).bottomMargin = 5;
+        ((LinearLayout.LayoutParams) listText.getLayoutParams()).topMargin = 10;
+        ((LinearLayout.LayoutParams) listText.getLayoutParams()).bottomMargin = 10;
         ((LinearLayout.LayoutParams) listText.getLayoutParams()).leftMargin = 10;
         listText.setTextAppearance(getContext(), R.style.TextAppearance_AppCompat_Widget_PopupMenu_Large);
         listText.setText(super.getItem(position).text);

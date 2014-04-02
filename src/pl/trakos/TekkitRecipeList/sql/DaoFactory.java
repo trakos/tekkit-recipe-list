@@ -34,7 +34,7 @@ public class DaoFactory
     public static void copyAsset(Context context, String assetSource, File fileDestination) throws IOException
     {
         InputStream source = context.getAssets().open(assetSource);
-        if (!fileDestination.getParentFile().exists() && fileDestination.getParentFile().mkdirs())
+        if (!fileDestination.getParentFile().exists() && !fileDestination.getParentFile().mkdirs())
         {
             throw new IOException("can't create parent directory");
         }
