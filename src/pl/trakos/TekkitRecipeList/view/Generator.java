@@ -9,12 +9,34 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import pl.trakos.TekkitRecipeList.R;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Generator
 {
+    private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
+
+    public static int generateViewId()
+    {
+        while (true)
+        {
+            final int result = sNextGeneratedId.get();
+            // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
+            int newValue = result + 1;
+            if (newValue > 0x00FFFFFF)
+            {
+                newValue = 1; // Roll over to 1, not 0.
+            }
+            if (sNextGeneratedId.compareAndSet(result, newValue))
+            {
+                return result;
+            }
+        }
+    }
+
     static public View getItemPage(Context context, Item item)
     {
         LinearLayout linearLayout = new LinearLayout(context);
@@ -40,6 +62,13 @@ public class Generator
         imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         linearLayout.addView(imageView);
+
+        titleText = new TextView(context);
+        titleText.setText(R.string.recipes_crafting_item);
+        titleText.setTextSize(15);
+        titleText.setGravity(Gravity.CENTER);
+        titleText.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        linearLayout.addView(titleText);
 
         return linearLayout;
     }

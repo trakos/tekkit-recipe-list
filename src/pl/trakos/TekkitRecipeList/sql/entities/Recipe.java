@@ -2,10 +2,10 @@ package pl.trakos.TekkitRecipeList.sql.entities;
 
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import pl.trakos.TekkitRecipeList.sql.CompositeDao;
 import pl.trakos.TekkitRecipeList.sql.CompositeKey;
+import pl.trakos.TekkitRecipeList.sql.dao.RecipesDao;
 
-@DatabaseTable(tableName = "recipe", daoClass = CompositeDao.class)
+@DatabaseTable(tableName = "recipe", daoClass = RecipesDao.class)
 @CompositeKey(key1 = "recipe_id")
 public class Recipe
 {

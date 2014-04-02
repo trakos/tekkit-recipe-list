@@ -3,10 +3,8 @@ package pl.trakos.TekkitRecipeList;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
-import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.*;
+import pl.trakos.TekkitRecipeList.view.Generator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,20 +42,46 @@ public class ListDataAdapter extends ArrayAdapter<ListDataRow>
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
-        LinearLayout listLayout = new LinearLayout(getContext());
-        listLayout.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT, AbsListView.LayoutParams.WRAP_CONTENT));
+        ListDataRow item = super.getItem(position);
+
+        RelativeLayout relativeLayout = new RelativeLayout(getContext());
+        relativeLayout.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT, AbsListView.LayoutParams.WRAP_CONTENT));
+        relativeLayout.setPadding(10, 10, 10, 10);
+
+        LinearLayout linearLayout = null;
+
+        if (item.bitmapDrawable != null)
+        {
+            linearLayout = new LinearLayout(getContext());
+            linearLayout.setId(Generator.generateViewId());
+            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            layoutParams.rightMargin = 5;
+            linearLayout.setLayoutParams(layoutParams);
+            linearLayout.setPadding(3, 3, 3, 3);
+            relativeLayout.addView(linearLayout);
+
+            ImageView imageView = new ImageView(getContext());
+            imageView.setImageDrawable(item.bitmapDrawable);
+            imageView.setScaleType(ImageView.ScaleType.FIT_START);
+            imageView.setLayoutParams(new LinearLayout.LayoutParams(48, 48));
+            linearLayout.addView(imageView);
+        }
 
         TextView listText = new TextView(getContext());
-        listText.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, AbsListView.LayoutParams.WRAP_CONTENT));
-        ((LinearLayout.LayoutParams) listText.getLayoutParams()).topMargin = 10;
-        ((LinearLayout.LayoutParams) listText.getLayoutParams()).bottomMargin = 10;
-        ((LinearLayout.LayoutParams) listText.getLayoutParams()).leftMargin = 10;
+        RelativeLayout.LayoutParams textLayoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        if (linearLayout != null)
+        {
+            textLayoutParams.addRule(RelativeLayout.RIGHT_OF, linearLayout.getId());
+            textLayoutParams.addRule(RelativeLayout.CENTER_VERTICAL, linearLayout.getId());
+        }
+        listText.setLayoutParams(textLayoutParams);
         listText.setTextAppearance(getContext(), R.style.TextAppearance_AppCompat_Widget_PopupMenu_Large);
-        listText.setText(super.getItem(position).text);
+        listText.setText(item.text);
 
-        listLayout.addView(listText);
+        relativeLayout.addView(listText);
 
 
-        return listLayout;
+        return relativeLayout;
     }
 }

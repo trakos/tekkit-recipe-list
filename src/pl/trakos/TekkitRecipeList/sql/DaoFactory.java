@@ -7,6 +7,7 @@ import com.j256.ormlite.android.AndroidConnectionSource;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.support.ConnectionSource;
 import pl.trakos.TekkitRecipeList.sql.dao.ItemsDao;
+import pl.trakos.TekkitRecipeList.sql.dao.RecipesDao;
 import pl.trakos.TekkitRecipeList.sql.entities.*;
 
 import java.io.*;
@@ -94,7 +95,7 @@ public class DaoFactory
     public CompositeDao<ItemAttribute> itemAttributes;
     public CompositeDao<ItemRawcost> itemRawcosts;
     public CompositeDao<ItemRawcostEntry> itemRawcostEntries;
-    public CompositeDao<Recipe> itemRecipes;
+    public RecipesDao itemRecipes;
     public CompositeDao<RecipeIngredient> itemRecipeIngredients;
     public CompositeDao<RecipeIngredientOption> itemRecipeIngredientOptions;
 

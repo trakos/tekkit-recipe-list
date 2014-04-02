@@ -20,6 +20,17 @@ import java.sql.SQLException;
 @SuppressWarnings("deprecation")
 public class TekkitRecipeListActivity extends ActionBarActivity
 {
+    class Tuple<A, B>
+    {
+        public final A a;
+        public final B b;
+        Tuple(A a, B b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+    }
+
     static enum NavigationLevels
     {
         LEVEL_MODS,
@@ -29,7 +40,9 @@ public class TekkitRecipeListActivity extends ActionBarActivity
 
     public NavigationLevels navigationLevel = NavigationLevels.LEVEL_MODS;
     public ListDataRow[] selectedItems = new ListDataRow[NavigationLevels.values().length];
+    public Tuple<Integer, Integer>[] currentScrolls = new Tuple[NavigationLevels.values().length];
     public ListDataRow[] pathToCurrentItem = null;
+    public Tuple<Integer, Integer>[] pathToCurrentItemScrolls = null;
 
     DrawerLayout drawerLayout;
     FrameLayout frameLayout;
@@ -68,6 +81,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
                 if (pathToCurrentItem != null)
                 {
                     selectedItems = pathToCurrentItem;
+                    currentScrolls = pathToCurrentItemScrolls;
                     showLevel(NavigationLevels.LEVEL_ITEMS, null);
                 }
                 super.onDrawerClosed(view);
@@ -92,7 +106,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         listView.setBackgroundDrawable(new ColorDrawable(0xFFEEEEEE));
         try
         {
-            listView.setAdapter(new ListDataAdapter(this, DaoFactory.getDaoFactory().items.getModList()));
+            listView.setAdapter(new ListDataAdapter(this, ListDataRow.fromMods(DaoFactory.getDaoFactory().items.getModList(), this)));
         }
         catch (SQLException e)
         {
@@ -173,6 +187,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
                 title = itemPosition.text;
                 drawerLayout.closeDrawer(listView);
                 pathToCurrentItem = selectedItems.clone();
+                pathToCurrentItemScrolls = currentScrolls.clone();
 
                 showItem(itemPosition.id1, itemPosition.id2);
             }
@@ -223,6 +238,12 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             drawerToggle.setDrawerIndicatorEnabled(true);
         }
 
+        if (navigationLevel.ordinal() <= changeToLevel.ordinal())
+        {
+            currentScrolls[navigationLevel.ordinal()] = new Tuple<Integer, Integer>(listView.getFirstVisiblePosition(), listView.getChildAt(0) != null ? listView.getChildAt(0).getTop() : 0);
+            currentScrolls[changeToLevel.ordinal()] = new Tuple<Integer, Integer>(0, 0);
+        }
+
         navigationLevel = changeToLevel;
 
         try
@@ -230,22 +251,27 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             switch (changeToLevel)
             {
                 case LEVEL_MODS:
-                    adapter.changeData(ListDataRow.fromStrings(DaoFactory.getDaoFactory().items.getModList()));
+                    adapter.changeData(ListDataRow.fromMods(DaoFactory.getDaoFactory().items.getModList(), this));
                     title = getResources().getString(R.string.app_name);
                     break;
                 case LEVEL_CATEGORIES:
-                    adapter.changeData(ListDataRow.fromStrings(DaoFactory.getDaoFactory().items.getCategoriesList(selectedRow.text)));
+                    adapter.changeData(ListDataRow.fromCategories(DaoFactory.getDaoFactory().items.getCategoriesList(selectedRow.text), selectedRow.text, this));
                     title = selectedRow.text;
                     break;
                 case LEVEL_ITEMS:
                     ListDataRow modItem = selectedItems[NavigationLevels.LEVEL_MODS.ordinal()];
-                    adapter.changeData(ListDataRow.fromItems(DaoFactory.getDaoFactory().items.queryForEq("item_mod", modItem.text, "item_category_name", selectedRow.text)));
+                    adapter.changeData(ListDataRow.fromItems(DaoFactory.getDaoFactory().items.queryForEq("item_mod", modItem.text, "item_category_name", selectedRow.text), this));
                     break;
             }
         }
         catch (SQLException e)
         {
             throw new RuntimeException(e);
+        }
+
+        if (currentScrolls[changeToLevel.ordinal()] != null)
+        {
+            listView.setSelectionFromTop(currentScrolls[changeToLevel.ordinal()].a, currentScrolls[changeToLevel.ordinal()].b);
         }
 
         setTitle(title);
