@@ -15,12 +15,14 @@ import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
 import pl.trakos.TekkitRecipeList.view.Generator;
 
+import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 @SuppressWarnings("deprecation")
 public class TekkitRecipeListActivity extends ActionBarActivity
 {
-    class Tuple<A, B>
+    class Tuple<A, B> implements Serializable
     {
         public final A a;
         public final B b;
@@ -31,7 +33,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         }
     }
 
-    static enum NavigationLevels
+    static enum NavigationLevels implements Serializable
     {
         LEVEL_MODS,
         LEVEL_CATEGORIES,
@@ -43,6 +45,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
     public Tuple<Integer, Integer>[] currentScrolls = new Tuple[NavigationLevels.values().length];
     public ListDataRow[] pathToCurrentItem = null;
     public Tuple<Integer, Integer>[] pathToCurrentItemScrolls = null;
+    public ArrayList<ListDataRow> modList;
 
     DrawerLayout drawerLayout;
     FrameLayout frameLayout;
@@ -55,6 +58,14 @@ public class TekkitRecipeListActivity extends ActionBarActivity
     {
         super.onCreate(savedInstanceState);
         DaoFactory.getDaoFactory(this);
+        try
+        {
+            modList = ListDataRow.fromMods(DaoFactory.getDaoFactory().items.getModList(), this);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
 
         // avoid drawer catching back button listener
         drawerLayout = new DrawerLayout(this)
@@ -104,14 +115,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
 
         listView.setChoiceMode(AbsListView.CHOICE_MODE_SINGLE);
         listView.setBackgroundDrawable(new ColorDrawable(0xFFEEEEEE));
-        try
-        {
-            listView.setAdapter(new ListDataAdapter(this, ListDataRow.fromMods(DaoFactory.getDaoFactory().items.getModList(), this)));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        listView.setAdapter(new ListDataAdapter(this, (ArrayList<ListDataRow>) modList.clone()));
         listView.setOnItemClickListener(new DrawerItemClickListener());
 
         drawerLayout.addView(frameLayout);
@@ -171,6 +175,18 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         boolean drawerOpen = drawerLayout.isDrawerOpen(listView);
         //menu.findItem(R.id.action_websearch).setVisible(!drawerOpen);
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState)
+    {
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener
@@ -251,7 +267,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             switch (changeToLevel)
             {
                 case LEVEL_MODS:
-                    adapter.changeData(ListDataRow.fromMods(DaoFactory.getDaoFactory().items.getModList(), this));
+                    adapter.changeData(modList);
                     title = getResources().getString(R.string.app_name);
                     break;
                 case LEVEL_CATEGORIES:

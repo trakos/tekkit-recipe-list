@@ -26,6 +26,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="android-support-v7-appcompat" />
+    <orderEntry type="module" module-name="android-support-v7-gridlayout" />
     <orderEntry type="library" name="ormlite-android" level="project" />
     <orderEntry type="library" name="ormlite-core" level="project" />
   </component>

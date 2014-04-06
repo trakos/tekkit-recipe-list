@@ -4,4 +4,7 @@
     <string name="drawer_open">open</string>
     <string name="drawer_close">close</string>
     <string name="recipes_crafting_item">how to craft</string>
+    <string name="recipes_obtaining">how to use</string>
+    <string name="recipes_other">other with item</string>
+    <string name="too_much_recipes">Too much recipes - not showing %s recipes.</string>
 </resources>

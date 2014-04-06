@@ -7,29 +7,65 @@ import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
 
 import java.io.IOException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ListDataRow
+public class ListDataRow implements Serializable
 {
+    final Context context;
     public int id1;
     public int id2;
     public String text;
+    String drawablePath;
     public Drawable bitmapDrawable;
 
-    public ListDataRow(int id1, int id2, String text, Drawable bitmapDrawable)
+    protected Object writeReplace() throws ObjectStreamException
+    {
+        this.bitmapDrawable = null;
+        return this;
+    }
+
+    protected Object readResolve() throws ObjectStreamException
+    {
+        if (drawablePath != null && !drawablePath.equals(""))
+        {
+            try
+            {
+                this.bitmapDrawable = Drawable.createFromStream(context.getAssets().open(drawablePath), null);
+            }
+            catch (IOException e)
+            {
+                Log.e("icon_not_found", e.getMessage());
+            }
+        }
+        return this;
+    }
+
+    public ListDataRow(int id1, int id2, String text, String drawablePath, Context context)
     {
         this.id1 = id1;
         this.id2 = id2;
         this.text = text;
-        this.bitmapDrawable = bitmapDrawable;
+        this.drawablePath = drawablePath;
+        this.context = context;
+        try
+        {
+            bitmapDrawable = Drawable.createFromStream(context.getAssets().open(drawablePath), null);
+        }
+        catch (IOException e)
+        {
+            Log.e("icon_not_found", e.getMessage());
+        }
     }
 
     public ListDataRow(String text)
     {
         this.text = text;
+        context = null;
     }
 
     public static Collection<ListDataRow> fromStrings(String[] modList)
@@ -47,21 +83,16 @@ public class ListDataRow
         ArrayList<ListDataRow> dataRows = new ArrayList<ListDataRow>(modList.length);
         for (String mod : modList)
         {
-            Drawable drawable = null;
+            Item item;
             try
             {
-                Item item = DaoFactory.getDaoFactory().items.getModRepresentative(mod);
-                drawable = Drawable.createFromStream(context.getAssets().open("icons/" + item.item_icon), null);
+                item = DaoFactory.getDaoFactory().items.getModRepresentative(mod);
             }
             catch (SQLException e)
             {
                 throw new RuntimeException(e);
             }
-            catch (IOException e)
-            {
-                Log.e("icon_not_found", e.getMessage());
-            }
-            dataRows.add(new ListDataRow(0, 0, mod, drawable));
+            dataRows.add(new ListDataRow(0, 0, mod, "icons/" + item.item_icon, context));
         }
         return dataRows;
     }
@@ -71,16 +102,7 @@ public class ListDataRow
         ArrayList<ListDataRow> dataRows = new ArrayList<ListDataRow>(items.size());
         for (Item item : items)
         {
-            Drawable drawable = null;
-            try
-            {
-                drawable = Drawable.createFromStream(context.getAssets().open("icons/" + item.item_icon), null);
-            }
-            catch (Exception e)
-            {
-                Log.e("icon_not_found", e.getMessage());
-            }
-            dataRows.add(new ListDataRow(item.item_id, item.item_damage, item.item_name, drawable));
+            dataRows.add(new ListDataRow(item.item_id, item.item_damage, item.item_name, "icons/" + item.item_icon, context));
         }
         return dataRows;
     }
@@ -90,21 +112,16 @@ public class ListDataRow
         ArrayList<ListDataRow> dataRows = new ArrayList<ListDataRow>(categoriesList.length);
         for (String categoryName : categoriesList)
         {
-            Drawable drawable = null;
+            Item item;
             try
             {
-                Item item = DaoFactory.getDaoFactory().items.getCategoryModRepresentative(modName, categoryName);
-                drawable = Drawable.createFromStream(context.getAssets().open("icons/" + item.item_icon), null);
+                item = DaoFactory.getDaoFactory().items.getCategoryModRepresentative(modName, categoryName);
             }
             catch (SQLException e)
             {
                 throw new RuntimeException(e);
             }
-            catch (IOException e)
-            {
-                Log.e("icon_not_found", e.getMessage());
-            }
-            dataRows.add(new ListDataRow(0, 0, categoryName, drawable));
+            dataRows.add(new ListDataRow(0, 0, categoryName, "icons/" + item.item_icon, context));
         }
         return dataRows;
     }

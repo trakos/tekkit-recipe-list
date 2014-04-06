@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/TekkitRecipeList.iml" filepath="$PROJECT_DIR$/TekkitRecipeList.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../../tools/android_sdk/extras/android/support/v7/appcompat/android-support-v7-appcompat.iml" filepath="$PROJECT_DIR$/../../../tools/android_sdk/extras/android/support/v7/appcompat/android-support-v7-appcompat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../tools/android_sdk/extras/android/support/v7/gridlayout/android-support-v7-gridlayout.iml" filepath="$PROJECT_DIR$/../../../tools/android_sdk/extras/android/support/v7/gridlayout/android-support-v7-gridlayout.iml" />
     </modules>
   </component>
 </project>

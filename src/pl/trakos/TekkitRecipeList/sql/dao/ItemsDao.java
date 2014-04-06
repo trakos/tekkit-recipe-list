@@ -1,6 +1,7 @@
 package pl.trakos.TekkitRecipeList.sql.dao;
 
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.stmt.Where;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.DatabaseTableConfig;
 import pl.trakos.TekkitRecipeList.sql.CompositeDao;
@@ -45,32 +46,31 @@ public class ItemsDao extends CompositeDao<Item>
     public Item getModRepresentative(String modName) throws SQLException
     {
         QueryBuilder<Item,String> query = queryBuilder();
-        query.where().eq("item_mod", modName);
+        Where<Item,String> where = query.where().eq("item_mod", modName);
         query.limit(1L);
         if (modName.equals("CalclaviaCore"))
         {
-            query.where().eq("item_name", "Tin Plate");
+            where.and().eq("item_name", "Tin Plate");
         }
         else if (modName.equals("AppliedEnergistics"))
         {
-            query.where().eq("item_name", "ME Controller");
+            where.and().eq("item_name", "ME Controller");
         }
         else if (modName.equals("ComputerCraft"))
         {
-            query.where().eq("item_name", "Computer");
+            where.and().eq("item_name", "Computer");
         }
         else if (modName.startsWith("Galacticraft"))
         {
-            query.where().like("item_name", "%Rocket");
-            query.where().eq("item_showOnList", 1);
+            where.and().like("item_name", "%Rocket").and().eq("item_showOnList", 1);
         }
         else if (modName.equals("GregsLighting"))
         {
-            query.where().eq("item_name", "Floodlight");
+            where.and().eq("item_name", "Floodlight");
         }
         else if (modName.equals("ImmibisCore"))
         {
-            query.where().eq("item_name", "Hacksaw");
+            where.and().eq("item_name", "Hacksaw");
         }
         return query.queryForFirst();
     }
