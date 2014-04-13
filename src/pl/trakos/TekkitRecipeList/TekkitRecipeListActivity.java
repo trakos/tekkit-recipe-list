@@ -1,312 +1,184 @@
 package pl.trakos.TekkitRecipeList;
 
-import android.content.res.Configuration;
-import android.graphics.drawable.ColorDrawable;
+import android.app.ProgressDialog;
 import android.os.Bundle;
-import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
-import android.view.*;
+import android.view.KeyEvent;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
-import android.widget.ListView;
+import pl.trakos.TekkitRecipeList.navigation.NavigationHistory;
+import pl.trakos.TekkitRecipeList.navigation.NavigationHistoryEntry;
+import pl.trakos.TekkitRecipeList.navigation.NavigationLevels;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
-import pl.trakos.TekkitRecipeList.view.Generator;
-
-import java.io.Serializable;
-import java.sql.SQLException;
-import java.util.ArrayList;
+import pl.trakos.TekkitRecipeList.view.ItemLayout;
+import pl.trakos.TekkitRecipeList.view.MainList;
 
 @SuppressWarnings("deprecation")
 public class TekkitRecipeListActivity extends ActionBarActivity
 {
-    class Tuple<A, B> implements Serializable
-    {
-        public final A a;
-        public final B b;
-        Tuple(A a, B b)
-        {
-            this.a = a;
-            this.b = b;
-        }
-    }
+    public NavigationHistory historyStack = new NavigationHistory();
 
-    static enum NavigationLevels implements Serializable
-    {
-        LEVEL_MODS,
-        LEVEL_CATEGORIES,
-        LEVEL_ITEMS
-    }
-
-    public NavigationLevels navigationLevel = NavigationLevels.LEVEL_MODS;
-    public ListDataRow[] selectedItems = new ListDataRow[NavigationLevels.values().length];
-    public Tuple<Integer, Integer>[] currentScrolls = new Tuple[NavigationLevels.values().length];
-    public ListDataRow[] pathToCurrentItem = null;
-    public Tuple<Integer, Integer>[] pathToCurrentItemScrolls = null;
-    public ArrayList<ListDataRow> modList;
-
-    DrawerLayout drawerLayout;
-    FrameLayout frameLayout;
-    ListView listView;
-    String title = "test";
-    ActionBarDrawerToggle drawerToggle;
+    FrameLayout rootLayout;
+    ItemLayout itemLayout;
+    MainList listView;
+    public String title = "test";
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         DaoFactory.getDaoFactory(this);
-        try
-        {
-            modList = ListDataRow.fromMods(DaoFactory.getDaoFactory().items.getModList(), this);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
 
-        // avoid drawer catching back button listener
-        drawerLayout = new DrawerLayout(this)
-        {
-            @Override
-            public boolean onKeyUp(int keyCode, KeyEvent event)
-            {
-                return keyCode != KeyEvent.KEYCODE_BACK && super.onKeyUp(keyCode, event);
-            }
 
-            @Override
-            public boolean onKeyDown(int keyCode, KeyEvent event)
-            {
-                return keyCode != KeyEvent.KEYCODE_BACK && super.onKeyDown(keyCode, event);
-            }
-        };
-        frameLayout = new FrameLayout(this);
-        listView = new ListView(this);
-        drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.drawable.ic_drawer, R.string.drawer_open, R.string.drawer_close)
-        {
-
-            public void onDrawerClosed(View view)
-            {
-                if (pathToCurrentItem != null)
-                {
-                    selectedItems = pathToCurrentItem;
-                    currentScrolls = pathToCurrentItemScrolls;
-                    showLevel(NavigationLevels.LEVEL_ITEMS, null);
-                }
-                super.onDrawerClosed(view);
-                invalidateOptionsMenu();
-            }
-
-            public void onDrawerOpened(View drawerView)
-            {
-                super.onDrawerOpened(drawerView);
-                invalidateOptionsMenu();
-            }
-        };
+        rootLayout = new FrameLayout(this);
+        itemLayout = new ItemLayout(this);
+        listView = new MainList(this);
 
         getSupportActionBar().setDisplayUseLogoEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        drawerLayout.setLayoutParams(new DrawerLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
-        frameLayout.setLayoutParams(new DrawerLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
-        listView.setLayoutParams(new DrawerLayout.LayoutParams(320, DrawerLayout.LayoutParams.MATCH_PARENT, Gravity.LEFT));
+        rootLayout.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
+        itemLayout.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
+        listView.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
 
-        listView.setChoiceMode(AbsListView.CHOICE_MODE_SINGLE);
-        listView.setBackgroundDrawable(new ColorDrawable(0xFFEEEEEE));
-        listView.setAdapter(new ListDataAdapter(this, (ArrayList<ListDataRow>) modList.clone()));
-        listView.setOnItemClickListener(new DrawerItemClickListener());
+        rootLayout.addView(listView);
+        rootLayout.addView(itemLayout);
+        setContentView(rootLayout);
 
-        drawerLayout.addView(frameLayout);
-        drawerLayout.addView(listView);
-        setContentView(drawerLayout);
-        drawerLayout.setDrawerListener(drawerToggle);
+
+        listView.setOnItemClickListener(new MainList.OnItemClickListener()
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                NavigationHistoryEntry current = historyStack.peek();
+                NavigationHistoryEntry newEntry = new NavigationHistoryEntry();
+                newEntry.navigationLevel = current.navigationLevel != NavigationLevels.LEVEL_ITEM ? NavigationLevels.next(current.navigationLevel) : NavigationLevels.LEVEL_ITEM;
+                newEntry.selectedEntries = current.selectedEntries.clone();
+                newEntry.selectedEntries[newEntry.navigationLevel.ordinal()] = ((ListDataAdapter) listView.getAdapter()).getItem(position).cloneWithoutDrawable();
+
+                historyStack.push(newEntry);
+                displayView(newEntry);
+            }
+        });
+
+        listView.setOnScrollListener(new AbsListView.OnScrollListener()
+        {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState)
+            {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount)
+            {
+                historyStack.peek().scrollFirstVisiblePosition = view.getFirstVisiblePosition();
+                historyStack.peek().scrollTopIndex = view.getChildAt(0) != null ? view.getChildAt(0).getTop() : 0;
+            }
+        });
+
+        displayView(historyStack.peek());
     }
 
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState)
+    public void pushToHistoryAndShow(Item item)
     {
-        super.onPostCreate(savedInstanceState);
-        drawerToggle.syncState();
+        NavigationHistoryEntry newEntry = new NavigationHistoryEntry();
+        newEntry.navigationLevel = NavigationLevels.LEVEL_ITEM;
+        newEntry.selectedEntries = new ListDataRow[NavigationLevels.values().length];
+        newEntry.selectedEntries[NavigationLevels.LEVEL_CATEGORIES.ordinal()] = new ListDataRow(item.item_mod);
+        newEntry.selectedEntries[NavigationLevels.LEVEL_ITEMS.ordinal()] = new ListDataRow(item.item_category_name);
+        newEntry.selectedEntries[NavigationLevels.LEVEL_ITEM.ordinal()] = new ListDataRow(item.item_id, item.item_damage, item.item_name, null, this);
+
+        historyStack.push(newEntry);
+        displayView(newEntry);
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig)
+    android.os.Handler mHandler = new android.os.Handler();
+    public void displayView(final NavigationHistoryEntry current)
     {
-        super.onConfigurationChanged(newConfig);
-        drawerToggle.onConfigurationChanged(newConfig);
+        final ProgressDialog progressDialog = ProgressDialog.show(this, "loading", "please wait...", true);
+        new Thread()
+        {
+            @Override
+            public void run()
+            {
+                if (current.navigationLevel == NavigationLevels.LEVEL_ITEM)
+                {
+                    itemLayout.prepareItem(current.getCurrentEntry().id1, current.getCurrentEntry().id2);
+                }
+                else
+                {
+                    listView.prepareLevel(current);
+                }
+                mHandler.post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        if (current.navigationLevel == NavigationLevels.LEVEL_ITEM)
+                        {
+                            listView.setVisibility(View.GONE);
+                            itemLayout.setVisibility(View.VISIBLE);
+                            itemLayout.showPreparedItem();
+                        }
+                        else
+                        {
+                            listView.setVisibility(View.VISIBLE);
+                            itemLayout.setVisibility(View.GONE);
+                            listView.usePreparedLevel(current);
+                        }
+                        progressDialog.hide();
+                    }
+                });
+            }
+        }.start();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        // Pass the event to ActionBarDrawerToggle, if it returns true, then it has handled the app icon touch event
-        if (drawerToggle.onOptionsItemSelected(item))
-        {
-            return true;
-        }
         switch (item.getItemId())
         {
             case android.R.id.home:
                 goUp();
-                /*if (drawerLayout.isDrawerOpen(listView))
-                {
-                    drawerLayout.closeDrawer(listView);
-                    if (selectedItems[NavigationLevels.LEVEL_ITEMS.ordinal()] != null)
-                    {
-                        navigationLevel = NavigationLevels.LEVEL_ITEMS;
-                        title = selectedItems[NavigationLevels.LEVEL_ITEMS.ordinal()].text;
-                        setTitle(title);
-                    }
-                }
-                else
-                {
-                    drawerLayout.openDrawer(listView);
-                }*/
                 break;
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu)
-    {
-        boolean drawerOpen = drawerLayout.isDrawerOpen(listView);
-        //menu.findItem(R.id.action_websearch).setVisible(!drawerOpen);
-        return super.onPrepareOptionsMenu(menu);
-    }
-
-    @Override
     protected void onSaveInstanceState(Bundle outState)
     {
         super.onSaveInstanceState(outState);
+
+        outState.putSerializable("history", historyStack);
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState)
     {
         super.onRestoreInstanceState(savedInstanceState);
-    }
 
-    private class DrawerItemClickListener implements ListView.OnItemClickListener
-    {
-        @Override
-        public void onItemClick(AdapterView parent, View view, int position, long id)
-        {
-            ListDataAdapter adapter = (ListDataAdapter) listView.getAdapter();
-            ListDataRow itemPosition = adapter.getItem(position);
-            if (navigationLevel == NavigationLevels.LEVEL_ITEMS)
-            {
-                selectedItems[navigationLevel.ordinal()] = itemPosition;
-                listView.setItemChecked(position, true);
-                title = itemPosition.text;
-                drawerLayout.closeDrawer(listView);
-                pathToCurrentItem = selectedItems.clone();
-                pathToCurrentItemScrolls = currentScrolls.clone();
-
-                showItem(itemPosition.id1, itemPosition.id2);
-            }
-            else
-            {
-                showLevel(NavigationLevels.values()[navigationLevel.ordinal()+1], itemPosition);
-            }
-            setTitle(title);
-        }
-    }
-
-    private void showItem(int itemId, int itemDamage)
-    {
-        Item item;
-        try
-        {
-            item = DaoFactory.getDaoFactory().items.queryForId(itemId, itemDamage);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        frameLayout.removeAllViews();
-        frameLayout.addView(Generator.getItemPage(this, item));
-    }
-
-    void showLevel(NavigationLevels changeToLevel, ListDataRow selectedRow)
-    {
-        ListDataAdapter adapter = (ListDataAdapter) listView.getAdapter();
-        if (changeToLevel.ordinal() > 0)
-        {
-            getSupportActionBar().setDisplayUseLogoEnabled(false);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            drawerToggle.setDrawerIndicatorEnabled(false);
-            if (selectedRow == null)
-            {
-                selectedRow = selectedItems[changeToLevel.ordinal() - 1];
-            }
-            else
-            {
-                selectedItems[changeToLevel.ordinal() - 1] = selectedRow;
-            }
-        }
-        else
-        {
-            getSupportActionBar().setDisplayUseLogoEnabled(true);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            drawerToggle.setDrawerIndicatorEnabled(true);
-        }
-
-        if (navigationLevel.ordinal() <= changeToLevel.ordinal())
-        {
-            currentScrolls[navigationLevel.ordinal()] = new Tuple<Integer, Integer>(listView.getFirstVisiblePosition(), listView.getChildAt(0) != null ? listView.getChildAt(0).getTop() : 0);
-            currentScrolls[changeToLevel.ordinal()] = new Tuple<Integer, Integer>(0, 0);
-        }
-
-        navigationLevel = changeToLevel;
-
-        try
-        {
-            switch (changeToLevel)
-            {
-                case LEVEL_MODS:
-                    adapter.changeData(modList);
-                    title = getResources().getString(R.string.app_name);
-                    break;
-                case LEVEL_CATEGORIES:
-                    adapter.changeData(ListDataRow.fromCategories(DaoFactory.getDaoFactory().items.getCategoriesList(selectedRow.text), selectedRow.text, this));
-                    title = selectedRow.text;
-                    break;
-                case LEVEL_ITEMS:
-                    ListDataRow modItem = selectedItems[NavigationLevels.LEVEL_MODS.ordinal()];
-                    adapter.changeData(ListDataRow.fromItems(DaoFactory.getDaoFactory().items.queryForEq("item_mod", modItem.text, "item_category_name", selectedRow.text), this));
-                    break;
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        if (currentScrolls[changeToLevel.ordinal()] != null)
-        {
-            listView.setSelectionFromTop(currentScrolls[changeToLevel.ordinal()].a, currentScrolls[changeToLevel.ordinal()].b);
-        }
-
-        setTitle(title);
+        historyStack = (NavigationHistory) savedInstanceState.getSerializable("history");
+        displayView(historyStack.peek());
     }
 
     @Override
     public void onBackPressed()
     {
-        if (navigationLevel == NavigationLevels.LEVEL_MODS && drawerLayout.isDrawerOpen(listView))
-        {
-            drawerLayout.closeDrawer(listView);
-        }
-        else if (navigationLevel == NavigationLevels.LEVEL_MODS && !drawerLayout.isDrawerOpen(listView))
+        if (historyStack.empty())
         {
             super.onBackPressed();
         }
         else
         {
-            goUp();
+            goBack();
         }
     }
 
@@ -316,33 +188,33 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         switch (keyCode)
         {
             case KeyEvent.KEYCODE_MENU:
-                if (drawerLayout.isDrawerOpen(listView))
-                {
-                    drawerLayout.closeDrawer(listView);
-                }
-                else
-                {
-                    drawerLayout.openDrawer(listView);
-                }
                 return true;
             default:
                 return super.onKeyDown(keyCode, event);
         }
     }
 
+    public void goBack()
+    {
+        historyStack.pop();
+        displayView(historyStack.peek());
+    }
+
     public void goUp()
     {
-        if (!drawerLayout.isDrawerOpen(listView) && navigationLevel != NavigationLevels.LEVEL_MODS)
+        NavigationHistoryEntry current = historyStack.peek();
+        if (current.navigationLevel == NavigationLevels.LEVEL_MODS)
         {
-            drawerLayout.openDrawer(listView);
+            return;
         }
-        else if (drawerLayout.isDrawerOpen(listView) && navigationLevel == NavigationLevels.LEVEL_MODS)
+        NavigationHistoryEntry newEntry = new NavigationHistoryEntry(NavigationLevels.prev(current.navigationLevel), 0, 0, current.selectedEntries.clone());
+        NavigationHistoryEntry lastSameLevel = historyStack.findMostRecentOnLevel(newEntry.navigationLevel);
+        if (lastSameLevel != null && (lastSameLevel.getCurrentEntry() == null || lastSameLevel.getCurrentEntry().equals(newEntry.getCurrentEntry())))
         {
-            drawerLayout.closeDrawer(listView);
+            newEntry.scrollFirstVisiblePosition = lastSameLevel.scrollFirstVisiblePosition;
+            newEntry.scrollTopIndex = lastSameLevel.scrollTopIndex;
         }
-        else if (navigationLevel != NavigationLevels.LEVEL_MODS)
-        {
-            showLevel(NavigationLevels.values()[navigationLevel.ordinal() - 1], null);
-        }
+        historyStack.push(newEntry);
+        displayView(newEntry);
     }
 }

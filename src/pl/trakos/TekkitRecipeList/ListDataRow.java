@@ -16,12 +16,11 @@ import java.util.List;
 
 public class ListDataRow implements Serializable
 {
-    final Context context;
     public int id1;
     public int id2;
     public String text;
     String drawablePath;
-    public Drawable bitmapDrawable;
+    public transient Drawable bitmapDrawable;
 
     protected Object writeReplace() throws ObjectStreamException
     {
@@ -31,7 +30,7 @@ public class ListDataRow implements Serializable
 
     protected Object readResolve() throws ObjectStreamException
     {
-        if (drawablePath != null && !drawablePath.equals(""))
+        /*if (drawablePath != null && !drawablePath.equals(""))
         {
             try
             {
@@ -41,7 +40,7 @@ public class ListDataRow implements Serializable
             {
                 Log.e("icon_not_found", e.getMessage());
             }
-        }
+        }*/
         return this;
     }
 
@@ -51,21 +50,22 @@ public class ListDataRow implements Serializable
         this.id2 = id2;
         this.text = text;
         this.drawablePath = drawablePath;
-        this.context = context;
-        try
+        if (drawablePath != null)
         {
-            bitmapDrawable = Drawable.createFromStream(context.getAssets().open(drawablePath), null);
-        }
-        catch (IOException e)
-        {
-            Log.e("icon_not_found", e.getMessage());
+            try
+            {
+                bitmapDrawable = Drawable.createFromStream(context.getAssets().open(drawablePath), null);
+            }
+            catch (IOException e)
+            {
+                Log.e("icon_not_found", e.getMessage());
+            }
         }
     }
 
     public ListDataRow(String text)
     {
         this.text = text;
-        context = null;
     }
 
     public static Collection<ListDataRow> fromStrings(String[] modList)
@@ -124,5 +124,15 @@ public class ListDataRow implements Serializable
             dataRows.add(new ListDataRow(0, 0, categoryName, "icons/" + item.item_icon, context));
         }
         return dataRows;
+    }
+
+    public boolean equals(ListDataRow to)
+    {
+        return this.id1 == to.id1 && this.id2 == to.id2 && (this.text == null || this.text.equals(to.text));
+    }
+
+    public ListDataRow cloneWithoutDrawable()
+    {
+        return new ListDataRow(id1, id2, text, null, null);
     }
 }

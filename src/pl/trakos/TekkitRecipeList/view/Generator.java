@@ -21,6 +21,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Generator
 {
+    public static class ItemImageView extends ImageView
+    {
+        public Item item;
+
+        public ItemImageView(Context context, Item item)
+        {
+            super(context);
+            this.item = item;
+        }
+    }
+
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
 
     public static int generateViewId()
@@ -41,10 +52,9 @@ public class Generator
         }
     }
 
-    static public View getItemPage(Activity context, Item item)
+    static public View getItemPage(Activity context, Item item, View.OnClickListener onItemTouchEvent)
     {
         loadedAssets = new HashMap<String, Drawable>();
-        ScrollView scrollView = new ScrollView(context);
 
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -71,20 +81,19 @@ public class Generator
         linearLayout.addView(imageView);
 
         linearLayout.addView(generateSubtitle(context, context.getResources().getString(R.string.recipes_crafting_item)));
-        linearLayout.addView(generateRecipes(context, item, "result"));
+        linearLayout.addView(generateRecipes(context, item, "result", onItemTouchEvent));
 
         linearLayout.addView(generateSubtitle(context, context.getResources().getString(R.string.recipes_obtaining)));
-        linearLayout.addView(generateRecipes(context, item, "ingredient"));
+        linearLayout.addView(generateRecipes(context, item, "ingredient", onItemTouchEvent));
 
         linearLayout.addView(generateSubtitle(context, context.getResources().getString(R.string.recipes_other)));
-        linearLayout.addView(generateRecipes(context, item, "other"));
+        linearLayout.addView(generateRecipes(context, item, "other", onItemTouchEvent));
 
-        scrollView.addView(linearLayout);
-        return scrollView;
+        return linearLayout;
     }
 
-    static final float minColWidth = 512;
-    private static View generateRecipes(Activity context, Item item, String type)
+    static final float minColWidth = 350;
+    private static View generateRecipes(Activity context, Item item, String type, View.OnClickListener onItemTouchEvent)
     {
         Display display = context.getWindowManager().getDefaultDisplay();
         int width = display.getWidth();
@@ -128,7 +137,7 @@ public class Generator
                 gridLayout.setColumnCount(columnCount);
             }
 
-            gridLayout.addView(generateRecipe(context, recipe, scale));
+            gridLayout.addView(generateRecipe(context, recipe, scale, onItemTouchEvent));
 
             k++;
         }
@@ -136,7 +145,7 @@ public class Generator
         return linearLayout;
     }
 
-    private static View generateSubtitle(Activity context, String text)
+    private static TextView generateSubtitle(Activity context, String text)
     {
         TextView titleText = new TextView(context);
         titleText.setText(text);
@@ -146,7 +155,7 @@ public class Generator
         return titleText;
     }
 
-    private static View generateRecipe(Activity context, Recipe recipe, float scale)
+    private static View generateRecipe(Activity context, Recipe recipe, float scale, View.OnClickListener onItemTouchEvent)
     {
         Handler recipeHandler;
         Map<RecipeIngredient, List<Item>> ingredientListDictionary = new HashMap<RecipeIngredient, List<Item>>();
@@ -181,6 +190,10 @@ public class Generator
         frameLayout.addView(getImageView(context, backgroundDrawable, 512, scale, 0, 0));
         frameLayout.addView(getImageView(context, recipeBackgroundDrawable, 512, scale, 6, 44));
 
+        TextView textView = generateSubtitle(context, recipeHandler.handler_name);
+        textView.setPadding(0, (int) (scale *  15), 0, 0);
+        frameLayout.addView(textView);
+
         for (RecipeIngredient recipeIngredient : ingredientListDictionary.keySet())
         {
             List<Item> items = ingredientListDictionary.get(recipeIngredient);
@@ -196,7 +209,8 @@ public class Generator
             {
                 iconDrawable = context.getResources().getDrawable(R.drawable.noicon);
             }
-            frameLayout.addView(getImageView(context, iconDrawable, 40, scale, (int) (recipeIngredient.ingredient_x * 2.9f + 20), (int) (recipeIngredient.ingredient_y * 2.9f + 46)));
+            View itemImageView = getImageView(context, iconDrawable, 40, scale, (int) (recipeIngredient.ingredient_x * 2.9f + 22), (int) (recipeIngredient.ingredient_y * 2.9f + 46), item, onItemTouchEvent);
+            frameLayout.addView(itemImageView);
         }
 
 
@@ -205,13 +219,22 @@ public class Generator
 
     static View getImageView(Context context, Drawable drawable, int drawableWidth, float scale, int marginLeft, int marginTop)
     {
+        return getImageView(context, drawable, drawableWidth, scale, marginLeft, marginTop, null, null);
+    }
+
+    static View getImageView(Context context, Drawable drawable, int drawableWidth, float scale, int marginLeft, int marginTop, Item item, View.OnClickListener onItemTouchEvent)
+    {
         float imageScale = drawableWidth / (float)drawable.getIntrinsicWidth();
 
 
-        ImageView imageView = new ImageView(context);
+        ImageView imageView = new ItemImageView(context, item);
         imageView.setLayoutParams(new FrameLayout.LayoutParams((int) (imageScale * scale * drawable.getIntrinsicWidth()), (int) (imageScale * scale * drawable.getIntrinsicHeight())));
         imageView.setImageDrawable(drawable);
-
+        if (onItemTouchEvent != null)
+        {
+            imageView.setOnClickListener(onItemTouchEvent);
+        }
+        
         FrameLayout frameLayoutPaddingContainer = new FrameLayout(context);
         frameLayoutPaddingContainer.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         frameLayoutPaddingContainer.setPadding((int) (marginLeft * scale), (int) (marginTop * scale), 0, 0);
