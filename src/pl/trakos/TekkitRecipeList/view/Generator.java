@@ -183,7 +183,7 @@ public class Generator
         boolean isSquareSizedRecipe = recipeHandler.handler_id.startsWith("micdoodle8");
 
         Drawable backgroundDrawable = context.getResources().getDrawable(isSquareSizedRecipe ? R.drawable.recipebg_square : R.drawable.recipebg);
-        Drawable recipeBackgroundDrawable = getAssetDrawable(context, "gui_backgrounds/" + recipeHandler.handler_image);
+        Drawable recipeBackgroundDrawable = RecipeBackgrounds.guiBackgrounds.get(recipeHandler.handler_image);
 
         FrameLayout frameLayout = new FrameLayout(context);
         frameLayout.setLayoutParams(new FrameLayout.LayoutParams((int) (512 * scale), (int)(scale * (isSquareSizedRecipe ? 512 : 289))));

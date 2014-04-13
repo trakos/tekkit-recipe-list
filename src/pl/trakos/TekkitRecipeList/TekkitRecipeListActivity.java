@@ -15,6 +15,7 @@ import pl.trakos.TekkitRecipeList.navigation.NavigationHistoryEntry;
 import pl.trakos.TekkitRecipeList.navigation.NavigationLevels;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
+import pl.trakos.TekkitRecipeList.view.RecipeBackgrounds;
 import pl.trakos.TekkitRecipeList.view.ItemLayout;
 import pl.trakos.TekkitRecipeList.view.MainList;
 
@@ -33,7 +34,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
     {
         super.onCreate(savedInstanceState);
         DaoFactory.getDaoFactory(this);
-
+        RecipeBackgrounds.load(this);
 
         rootLayout = new FrameLayout(this);
         itemLayout = new ItemLayout(this);
