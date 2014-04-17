@@ -96,7 +96,7 @@ public class Generator
         ImageView imageView = new ImageView(context);
         try
         {
-            imageView.setImageDrawable(Drawable.createFromStream(context.getAssets().open("icons/" + item.item_icon), null));
+            imageView.setImageDrawable(Drawable.createFromStream(context.getAssets().open("icons_full/" + item.item_icon), null));
         }
         catch (IOException e)
         {
