@@ -5,14 +5,12 @@ import android.os.Bundle;
 import android.support.v4.internal.view.SupportMenuItem;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.widget.*;
 import android.support.v7.widget.SearchView;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AbsListView;
-import android.widget.AdapterView;
-import android.widget.FrameLayout;
 import pl.trakos.TekkitRecipeList.navigation.NavigationHistory;
 import pl.trakos.TekkitRecipeList.navigation.NavigationHistoryEntry;
 import pl.trakos.TekkitRecipeList.navigation.NavigationLevels;
@@ -30,12 +28,14 @@ public class TekkitRecipeListActivity extends ActionBarActivity
 {
     public NavigationHistory historyStack = new NavigationHistory();
     final int MENU_ITEM1 = 1;
+    final int MENU_ITEM2 = 2;
     public String title = "test";
 
     FrameLayout rootLayout;
     ItemLayout itemLayout;
     MainList listView;
     SearchView searchView;
+    ListPopupWindow listPopupWindow;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -44,15 +44,18 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         DaoFactory.getDaoFactory(this);
         RecipeBackgrounds.load(this);
-
+        Preferences.getInstance(this);
 
         rootLayout = new FrameLayout(this);
         itemLayout = new ItemLayout(this);
         listView = new MainList(this);
+        listPopupWindow = new ListPopupWindow(this);
+
+        listPopupWindow.setAdapter(new ListDataAdapter(this, new String[] { "1 column", "2 columns", "3 columns", "4 columns", "5 columns"}));
+        listPopupWindow.setAdapter(new ListDataAdapter(this, new String[] { "1 column", "2 columns", "3 columns", "4 columns", "5 columns"}));
 
         getSupportActionBar().setDisplayUseLogoEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
 
         rootLayout.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
         itemLayout.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
@@ -117,9 +120,37 @@ public class TekkitRecipeListActivity extends ActionBarActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
+        listPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener()
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                int columnCount = 1 + (int) id;
+                Preferences.getInstance().setCurrentColumnCount(columnCount);
+                listPopupWindow.dismiss();
+                displayView(historyStack.peek());
+            }
+        });
         searchView = new ItemsSearch(this);
         menu
-                .add(Menu.NONE, MENU_ITEM1, Menu.NONE, R.string.search)
+                .add(Menu.NONE, MENU_ITEM2, MENU_ITEM1, R.string.adjust_column_count)
+                .setIcon(R.drawable.ic_action_settings)
+                .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener()
+                {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item)
+                    {
+                        listPopupWindow.setAnchorView(rootLayout);
+                        listPopupWindow.setHeight(Math.min(rootLayout.getHeight(), 300));
+                        listPopupWindow.setModal(true);
+                        listPopupWindow.show();
+                        //listPopupWindow.getListView().setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                        return true;
+                    }
+                })
+                .setShowAsAction(SupportMenuItem.SHOW_AS_ACTION_IF_ROOM | SupportMenuItem.SHOW_AS_ACTION_WITH_TEXT);
+        menu
+                .add(Menu.NONE, MENU_ITEM1, MENU_ITEM2, R.string.search)
                 .setIcon(R.drawable.ic_action_search)
                 .setActionView(searchView)
                 .setShowAsAction(SupportMenuItem.SHOW_AS_ACTION_IF_ROOM | SupportMenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);

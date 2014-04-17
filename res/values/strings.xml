@@ -10,4 +10,6 @@
     <string name="search">Search</string>
     <string name="tap_ingredient_to_view">tap ingredient to view</string>
     <string name="tap_again_to_view">tap again to show recipes</string>
+    <string name="adjust_column_count">Adjust column count</string>
+    <string name="item_not_found">item not found</string>
 </resources>

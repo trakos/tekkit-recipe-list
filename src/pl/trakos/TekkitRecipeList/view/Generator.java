@@ -17,6 +17,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import pl.trakos.TekkitRecipeList.Preferences;
 import pl.trakos.TekkitRecipeList.R;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.*;
@@ -124,7 +125,7 @@ public class Generator
         Display display = context.getWindowManager().getDefaultDisplay();
         int width = display.getWidth();
         int height = display.getHeight();
-        int columnCount = (int) Math.max(1, Math.floor(width / minColWidth));
+        int columnCount = Preferences.getInstance(context).getCurrentColumnCount();//(int) Math.max(1, Math.floor(width / minColWidth));
         int columnWidth = width / columnCount;
         float scale = columnWidth / 512f;
 

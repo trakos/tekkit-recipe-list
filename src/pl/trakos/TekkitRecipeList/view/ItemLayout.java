@@ -55,6 +55,11 @@ public class ItemLayout extends ScrollView
                 {
                     long currentTicks = SystemClock.uptimeMillis();
                     Item item = ((Generator.ItemImageView) v).item;
+                    if (item == null)
+                    {
+                        Toast.makeText(getContext(), R.string.item_not_found, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     int touchedItemId = item.item_id;
                     int touchedItemDamage = item.item_damage;
                     if (lastTouchTicks + 2000 > currentTicks && touchedItemId == lastTouchItemId && touchedItemDamage == lastTouchItemDamage)
