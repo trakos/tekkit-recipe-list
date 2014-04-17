@@ -3,3 +3,5 @@
 assets/gui_backgrounds/
 assets/icons/
 out/*
+proguard_logs/*
+TekkitRecipeList.apk

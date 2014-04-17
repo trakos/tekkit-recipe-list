@@ -1,7 +1,10 @@
 package pl.trakos.TekkitRecipeList.view;
 
+import android.os.SystemClock;
+import pl.trakos.TekkitRecipeList.R;
 import android.view.View;
 import android.widget.ScrollView;
+import android.widget.Toast;
 import pl.trakos.TekkitRecipeList.TekkitRecipeListActivity;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
@@ -41,13 +44,30 @@ public class ItemLayout extends ScrollView
         }
         itemPage = Generator.getItemPage(activity, item, new OnClickListener()
         {
+            int lastTouchItemId;
+            int lastTouchItemDamage;
+            long lastTouchTicks = -2000;
+
             @Override
             public void onClick(View v)
             {
                 if (v instanceof Generator.ItemImageView)
                 {
+                    long currentTicks = SystemClock.uptimeMillis();
                     Item item = ((Generator.ItemImageView) v).item;
-                    activity.pushToHistoryAndShow(item);
+                    int touchedItemId = item.item_id;
+                    int touchedItemDamage = item.item_damage;
+                    if (lastTouchTicks + 2000 > currentTicks && touchedItemId == lastTouchItemId && touchedItemDamage == lastTouchItemDamage)
+                    {
+                        activity.pushToHistoryAndShow(item);
+                    }
+                    else
+                    {
+                        lastTouchTicks = currentTicks;
+                        lastTouchItemId = touchedItemId;
+                        lastTouchItemDamage = touchedItemDamage;
+                        Toast.makeText(getContext(), item.item_name + "\n\n" + getContext().getResources().getString(R.string.tap_again_to_view), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });

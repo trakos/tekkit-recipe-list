@@ -7,4 +7,7 @@
     <string name="recipes_obtaining">how to use</string>
     <string name="recipes_other">other with item</string>
     <string name="too_much_recipes">Too much recipes - not showing %s recipes.</string>
+    <string name="search">Search</string>
+    <string name="tap_ingredient_to_view">tap ingredient to view</string>
+    <string name="tap_again_to_view">tap again to show recipes</string>
 </resources>

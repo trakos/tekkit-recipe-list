@@ -1,6 +1,5 @@
 package pl.trakos.TekkitRecipeList.view;
 
-import android.graphics.drawable.ColorDrawable;
 import android.widget.AbsListView;
 import android.widget.ListView;
 import pl.trakos.TekkitRecipeList.ListDataAdapter;
@@ -38,7 +37,7 @@ public class MainList extends ListView
 
 
         setChoiceMode(AbsListView.CHOICE_MODE_SINGLE);
-        setBackgroundDrawable(new ColorDrawable(0xFFEEEEEE));
+        //setBackgroundDrawable(new ColorDrawable(0xFFEEEEEE));
         setAdapter(adapter);
     }
 
@@ -81,8 +80,12 @@ public class MainList extends ListView
                     break;
                 case LEVEL_ITEMS:
                     ListDataRow modItem = current.selectedEntries[NavigationLevels.LEVEL_MODS.ordinal() + 1];
-                    preparedData = ListDataRow.fromItems(DaoFactory.getDaoFactory().items.queryForEq("item_mod", modItem.text, "item_category_name", selectedEntry.text), getContext());
+                    preparedData = ListDataRow.fromItems(DaoFactory.getDaoFactory().items.getItemList(modItem.text, selectedEntry.text), getContext());
                     activity.title = modItem.text + "/" + selectedEntry.text;
+                    break;
+                case LEVEL_SEARCH:
+                    preparedData = ListDataRow.fromItems(DaoFactory.getDaoFactory().items.search(current.getCurrentEntry().text), getContext());
+                    activity.title = "Search: " + current.getCurrentEntry().text;
                     break;
             }
         }

@@ -8,6 +8,7 @@ import pl.trakos.TekkitRecipeList.sql.CompositeDao;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
 
 import java.sql.SQLException;
+import java.util.List;
 
 public class ItemsDao extends CompositeDao<Item>
 {
@@ -81,5 +82,21 @@ public class ItemsDao extends CompositeDao<Item>
         query.where().eq("item_category_name", categoryName);//.and().eq("item_mod", modName);
         query.limit(1L);
         return query.queryForFirst();
+    }
+
+    public List<Item> search(String text) throws SQLException
+    {
+        QueryBuilder<Item, String> query = queryBuilder();
+        query.where().like("item_name", "%" + text + "%").and().eq("item_showOnList", 1);
+        query.orderBy("item_name", true);
+        query.limit(100L);
+        return query.query();
+    }
+
+    public List<Item> getItemList(String modName, String categoryName) throws SQLException
+    {
+        Where<Item, String> query = queryBuilder().where().eq("item_mod", modName).and().eq("item_category_name", categoryName);
+        query.and().eq("item_showOnList", 1);
+        return query.query();
     }
 }

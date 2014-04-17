@@ -2,19 +2,28 @@ package pl.trakos.TekkitRecipeList.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.GridLayout;
+import android.text.Html;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.*;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import pl.trakos.TekkitRecipeList.R;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,6 +76,23 @@ public class Generator
         titleText.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         linearLayout.addView(titleText);
 
+        String query = "";
+        try
+        {
+            if (item.item_mod.indexOf('|') != -1)
+            {
+                item.item_mod = item.item_mod.substring(0, item.item_mod.indexOf('|'));
+            }
+            query = URLEncoder.encode(item.item_name + " " + item.item_mod, "utf-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException(e);
+        }
+        TextView linkText = generateSubtitle(context, 1, Html.fromHtml("<a href=\"https://www.google.pl/search?q=" + query + "\">tap here to google for description</a>"));
+        linkText.setMovementMethod(LinkMovementMethod.getInstance());
+        linearLayout.addView(linkText);
+
         ImageView imageView = new ImageView(context);
         try
         {
@@ -80,19 +106,19 @@ public class Generator
         imageView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         linearLayout.addView(imageView);
 
-        linearLayout.addView(generateSubtitle(context, context.getResources().getString(R.string.recipes_crafting_item)));
+        linearLayout.addView(generateSubtitle(context, 1, context.getResources().getString(R.string.recipes_crafting_item)));
         linearLayout.addView(generateRecipes(context, item, "result", onItemTouchEvent));
 
-        linearLayout.addView(generateSubtitle(context, context.getResources().getString(R.string.recipes_obtaining)));
+        linearLayout.addView(generateSubtitle(context, 1, context.getResources().getString(R.string.recipes_obtaining)));
         linearLayout.addView(generateRecipes(context, item, "ingredient", onItemTouchEvent));
 
-        linearLayout.addView(generateSubtitle(context, context.getResources().getString(R.string.recipes_other)));
+        linearLayout.addView(generateSubtitle(context, 1, context.getResources().getString(R.string.recipes_other)));
         linearLayout.addView(generateRecipes(context, item, "other", onItemTouchEvent));
 
         return linearLayout;
     }
 
-    static final float minColWidth = 350;
+    static float minColWidth = 400;
     private static View generateRecipes(Activity context, Item item, String type, View.OnClickListener onItemTouchEvent)
     {
         Display display = context.getWindowManager().getDefaultDisplay();
@@ -100,7 +126,7 @@ public class Generator
         int height = display.getHeight();
         int columnCount = (int) Math.max(1, Math.floor(width / minColWidth));
         int columnWidth = width / columnCount;
-        float scale = columnWidth / (float)context.getResources().getDrawable(R.drawable.recipebg).getIntrinsicWidth();
+        float scale = columnWidth / 512f;
 
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -120,7 +146,7 @@ public class Generator
         }
         if (recipes.size() > 50)
         {
-            return generateSubtitle(context, String.format(context.getResources().getString(R.string.too_much_recipes), recipes.size()));
+            return generateSubtitle(context, scale, String.format(context.getResources().getString(R.string.too_much_recipes), recipes.size()));
         }
         int k = 0;
         int itemsPerGrid = 5 * columnCount;
@@ -145,13 +171,34 @@ public class Generator
         return linearLayout;
     }
 
-    private static TextView generateSubtitle(Activity context, String text)
+    private static TextView generateSubtitle(Activity context, float scale, String text)
+    {
+        return generateSubtitle(context, scale, text, null);
+    }
+
+    private static TextView generateSubtitle(Activity context, int scale, Spanned spanned)
+    {
+        return generateSubtitle(context, scale, spanned, null);
+    }
+
+    private static TextView generateSubtitle(Activity context, float scale, String text, Integer color)
     {
         TextView titleText = new TextView(context);
         titleText.setText(text);
-        titleText.setTextSize(15);
+        titleText.setTextSize(scale * 15);
         titleText.setGravity(Gravity.CENTER);
         titleText.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        if (color != null)
+        {
+            titleText.setTextColor(color);
+        }
+        return titleText;
+    }
+
+    private static TextView generateSubtitle(Activity context, float scale, Spanned spanned, Integer color)
+    {
+        TextView titleText = generateSubtitle(context, scale, "", color);
+        titleText.setText(spanned);
         return titleText;
     }
 
@@ -185,12 +232,14 @@ public class Generator
         Drawable backgroundDrawable = context.getResources().getDrawable(isSquareSizedRecipe ? R.drawable.recipebg_square : R.drawable.recipebg);
         Drawable recipeBackgroundDrawable = RecipeBackgrounds.guiBackgrounds.get(recipeHandler.handler_image);
 
+        int height = (int)(scale * (isSquareSizedRecipe ? 512 : 289));
+
         FrameLayout frameLayout = new FrameLayout(context);
-        frameLayout.setLayoutParams(new FrameLayout.LayoutParams((int) (512 * scale), (int)(scale * (isSquareSizedRecipe ? 512 : 289))));
+        frameLayout.setLayoutParams(new FrameLayout.LayoutParams((int) (512 * scale), height));
         frameLayout.addView(getImageView(context, backgroundDrawable, 512, scale, 0, 0));
         frameLayout.addView(getImageView(context, recipeBackgroundDrawable, 512, scale, 6, 44));
 
-        TextView textView = generateSubtitle(context, recipeHandler.handler_name);
+        TextView textView = generateSubtitle(context, scale, recipeHandler.handler_name, Color.BLACK);
         textView.setPadding(0, (int) (scale *  15), 0, 0);
         frameLayout.addView(textView);
 
@@ -198,7 +247,6 @@ public class Generator
         {
             List<Item> items = ingredientListDictionary.get(recipeIngredient);
             // @todo: mryganie pomiedzy opcjami
-            // @todo: amount
             Item item = items.get(0);
             Drawable iconDrawable;
             if (item != null)
@@ -211,8 +259,19 @@ public class Generator
             }
             View itemImageView = getImageView(context, iconDrawable, 40, scale, (int) (recipeIngredient.ingredient_x * 2.9f + 22), (int) (recipeIngredient.ingredient_y * 2.9f + 46), item, onItemTouchEvent);
             frameLayout.addView(itemImageView);
+            if (recipeIngredient.ingredient_amount > 1)
+            {
+                TextView amountText = generateSubtitle(context, scale, Integer.toString((int) recipeIngredient.ingredient_amount), Color.WHITE);
+                amountText.setPadding((int) (scale * (recipeIngredient.ingredient_x * 2.9f + 22 + 28)), (int) (scale * (recipeIngredient.ingredient_y * 2.9f + 46 + 24)), 0, 0);
+                amountText.setGravity(Gravity.LEFT);
+                frameLayout.addView(amountText);
+            }
         }
 
+        TextView textView2 = generateSubtitle(context, scale, context.getResources().getString(R.string.tap_ingredient_to_view), Color.GRAY);
+        textView2.setLayoutParams(new FrameLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
+        textView2.setPadding(0, (int) (scale * 15), 0, (int) (scale * 15));
+        frameLayout.addView(textView2);
 
         return frameLayout;
     }

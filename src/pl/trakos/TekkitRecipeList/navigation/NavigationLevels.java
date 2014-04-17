@@ -7,13 +7,18 @@ public enum NavigationLevels implements Serializable
     LEVEL_MODS,
     LEVEL_CATEGORIES,
     LEVEL_ITEMS,
-    LEVEL_ITEM;
+    LEVEL_ITEM,
+    LEVEL_SEARCH;
 
     public static NavigationLevels next(NavigationLevels current)
     {
         if (current == LEVEL_ITEM)
         {
             throw new RuntimeException("current = LEVEL_ITEM");
+        }
+        else if (current == LEVEL_SEARCH)
+        {
+            return LEVEL_ITEM;
         }
         return NavigationLevels.values()[current.ordinal() + 1];
     }
@@ -23,6 +28,10 @@ public enum NavigationLevels implements Serializable
         if (current == LEVEL_MODS)
         {
             throw new RuntimeException("current = LEVEL_MODS");
+        }
+        else if (current == LEVEL_SEARCH)
+        {
+            return LEVEL_MODS;
         }
         return NavigationLevels.values()[current.ordinal() - 1];
     }

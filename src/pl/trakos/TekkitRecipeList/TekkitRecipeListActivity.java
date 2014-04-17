@@ -2,9 +2,12 @@ package pl.trakos.TekkitRecipeList;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.support.v4.internal.view.SupportMenuItem;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.SearchView;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
@@ -15,26 +18,33 @@ import pl.trakos.TekkitRecipeList.navigation.NavigationHistoryEntry;
 import pl.trakos.TekkitRecipeList.navigation.NavigationLevels;
 import pl.trakos.TekkitRecipeList.sql.DaoFactory;
 import pl.trakos.TekkitRecipeList.sql.entities.Item;
-import pl.trakos.TekkitRecipeList.view.RecipeBackgrounds;
 import pl.trakos.TekkitRecipeList.view.ItemLayout;
+import pl.trakos.TekkitRecipeList.view.ItemsSearch;
 import pl.trakos.TekkitRecipeList.view.MainList;
+import pl.trakos.TekkitRecipeList.view.RecipeBackgrounds;
+
+import java.sql.SQLException;
 
 @SuppressWarnings("deprecation")
 public class TekkitRecipeListActivity extends ActionBarActivity
 {
     public NavigationHistory historyStack = new NavigationHistory();
+    final int MENU_ITEM1 = 1;
+    public String title = "test";
 
     FrameLayout rootLayout;
     ItemLayout itemLayout;
     MainList listView;
-    public String title = "test";
+    SearchView searchView;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
+        setTheme(R.style.Theme_AppCompat);
         super.onCreate(savedInstanceState);
         DaoFactory.getDaoFactory(this);
         RecipeBackgrounds.load(this);
+
 
         rootLayout = new FrameLayout(this);
         itemLayout = new ItemLayout(this);
@@ -42,6 +52,7 @@ public class TekkitRecipeListActivity extends ActionBarActivity
 
         getSupportActionBar().setDisplayUseLogoEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
 
         rootLayout.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
         itemLayout.setLayoutParams(new FrameLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT));
@@ -57,14 +68,30 @@ public class TekkitRecipeListActivity extends ActionBarActivity
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id)
             {
+                ListDataRow selectedPosition = ((ListDataAdapter) listView.getAdapter()).getItem(position);
                 NavigationHistoryEntry current = historyStack.peek();
-                NavigationHistoryEntry newEntry = new NavigationHistoryEntry();
-                newEntry.navigationLevel = current.navigationLevel != NavigationLevels.LEVEL_ITEM ? NavigationLevels.next(current.navigationLevel) : NavigationLevels.LEVEL_ITEM;
-                newEntry.selectedEntries = current.selectedEntries.clone();
-                newEntry.selectedEntries[newEntry.navigationLevel.ordinal()] = ((ListDataAdapter) listView.getAdapter()).getItem(position).cloneWithoutDrawable();
+                if (current.navigationLevel == NavigationLevels.LEVEL_SEARCH)
+                {
+                    // when searching I cant do it normally (like in else), because it wont have the context to make "going up" work
+                    try
+                    {
+                        pushToHistoryAndShow(DaoFactory.getDaoFactory().items.queryForId(selectedPosition.id1, selectedPosition.id2));
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+                else
+                {
+                    NavigationHistoryEntry newEntry = new NavigationHistoryEntry();
+                    newEntry.navigationLevel = current.navigationLevel != NavigationLevels.LEVEL_ITEM ? NavigationLevels.next(current.navigationLevel) : NavigationLevels.LEVEL_ITEM;
+                    newEntry.selectedEntries = current.selectedEntries.clone();
+                    newEntry.selectedEntries[newEntry.navigationLevel.ordinal()] = selectedPosition.cloneWithoutDrawable();
 
-                historyStack.push(newEntry);
-                displayView(newEntry);
+                    historyStack.push(newEntry);
+                    displayView(newEntry);
+                }
             }
         });
 
@@ -87,6 +114,18 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         displayView(historyStack.peek());
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        searchView = new ItemsSearch(this);
+        menu
+                .add(Menu.NONE, MENU_ITEM1, Menu.NONE, R.string.search)
+                .setIcon(R.drawable.ic_action_search)
+                .setActionView(searchView)
+                .setShowAsAction(SupportMenuItem.SHOW_AS_ACTION_IF_ROOM | SupportMenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
+        return super.onCreateOptionsMenu(menu);
+    }
+
     public void pushToHistoryAndShow(Item item)
     {
         NavigationHistoryEntry newEntry = new NavigationHistoryEntry();
@@ -95,6 +134,17 @@ public class TekkitRecipeListActivity extends ActionBarActivity
         newEntry.selectedEntries[NavigationLevels.LEVEL_CATEGORIES.ordinal()] = new ListDataRow(item.item_mod);
         newEntry.selectedEntries[NavigationLevels.LEVEL_ITEMS.ordinal()] = new ListDataRow(item.item_category_name);
         newEntry.selectedEntries[NavigationLevels.LEVEL_ITEM.ordinal()] = new ListDataRow(item.item_id, item.item_damage, item.item_name, null, this);
+
+        historyStack.push(newEntry);
+        displayView(newEntry);
+    }
+
+    public void searchForItem(String queryText)
+    {
+        NavigationHistoryEntry newEntry = new NavigationHistoryEntry();
+        newEntry.navigationLevel = NavigationLevels.LEVEL_SEARCH;
+        newEntry.selectedEntries = new ListDataRow[NavigationLevels.values().length];
+        newEntry.selectedEntries[NavigationLevels.LEVEL_SEARCH.ordinal()] = new ListDataRow(0, 0,queryText, null, this);
 
         historyStack.push(newEntry);
         displayView(newEntry);
@@ -188,8 +238,6 @@ public class TekkitRecipeListActivity extends ActionBarActivity
     {
         switch (keyCode)
         {
-            case KeyEvent.KEYCODE_MENU:
-                return true;
             default:
                 return super.onKeyDown(keyCode, event);
         }
