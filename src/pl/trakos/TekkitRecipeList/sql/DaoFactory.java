@@ -29,7 +29,7 @@ public class DaoFactory
             copyAsset(context, DB_FILE, destination);
             PreferenceManager.getDefaultSharedPreferences(context).edit().putInt("version", DATABASE_VERSION);
         }
-        return SQLiteDatabase.openDatabase(destination.getPath(), null, SQLiteDatabase.OPEN_READONLY);
+        return SQLiteDatabase.openDatabase(destination.getPath(), null, SQLiteDatabase.OPEN_READWRITE | SQLiteDatabase.NO_LOCALIZED_COLLATORS);
     }
 
     public static void copyAsset(Context context, String assetSource, File fileDestination) throws IOException
